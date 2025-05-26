@@ -17,7 +17,7 @@ try:
     import subprocess
 
     # Third party imports.
-    from fortnitepy.ext import commands
+    from rebootpy.ext import commands
     from colorama import Fore, Back, Style, init
     init(autoreset=True)
     from functools import partial
@@ -29,11 +29,11 @@ try:
     import sanic
     import aiohttp
     import requests
-    import fortnitepy
+    import rebootpy
 except ModuleNotFoundError as e:
     print(f'Error: {e}\nAttempting to install packages now (this may take a while).')
 
-    os.system('pip install -e git+https://github.com/PirxcyFinal/fortnitepy.git#egg=fortnitepy')
+    os.system('pip install git+https://github.com/xMistt/rebootpy.git')
 
     for module in (
         'crayons',
@@ -235,13 +235,13 @@ class PartyBot(commands.Bot):
         super().__init__(
             command_prefix=prefix,
             case_insensitive=True,
-            auth=fortnitepy.DeviceAuth(
+            auth=rebootpy.auth.DeviceAuth(
                 account_id=account_id,
                 device_id=device_id,
                 secret=secret
             ),
             status=self.status,
-            platform=fortnitepy.Platform('WIN'),
+            platform=rebootpy.enums.Platform.WINDOWS,
             **kwargs
         )
 
@@ -533,7 +533,7 @@ class PartyBot(commands.Bot):
                     await self.add_friend(user.id)
                     print(f'Send i friend request to {user.display_name}.')
 
-            except fortnitepy.HTTPException:
+            except rebootpy.errors.HTTPException:
                 print("There was a problem trying to add this friend.")
             except AttributeError:
                 print("I can't find a player with that name.")
@@ -553,7 +553,7 @@ class PartyBot(commands.Bot):
             self.status = self.status_verif
 
             await self.set_presence(self.status)
-            await self.party.set_privacy(fortnitepy.PartyPrivacy.PUBLIC)
+            await self.party.set_privacy(rebootpy.enums.PartyPrivacy.PUBLIC)
 
     async def checker_skin_bl(self):
         w = requests.get("https://bot.aerozoff.com/skinbl.json",headers={
@@ -634,7 +634,7 @@ class PartyBot(commands.Bot):
         await asyncio.sleep(40)
         self.loop.create_task(self.check_update())
 
-    async def event_party_invite(self, invite: fortnitepy.ReceivedPartyInvitation) -> None:
+    async def event_party_invite(self, invite: rebootpy.ReceivedPartyInvitation) -> None:
         if invite.sender.display_name in info['FullAccess']:
             await invite.accept()
         elif self.inv_on == 'T':
@@ -646,7 +646,7 @@ class PartyBot(commands.Bot):
             await invite.sender.send(self.inv_msg)
             await invite.sender.invite()
 
-    async def event_friend_presence(self, old_presence: Union[(None, fortnitepy.Presence)], presence: fortnitepy.Presence):
+    async def event_friend_presence(self, old_presence: Union[(None, rebootpy.Presence)], presence: rebootpy.Presence):
         if not self.is_ready():
             await self.wait_until_ready()
         if self.inv_all == 'T':
@@ -661,7 +661,7 @@ class PartyBot(commands.Bot):
                         if not self.party.member_count >= 16:
                             await friend.invite()
 
-    async def event_party_member_update(self, member: fortnitepy.PartyMember) -> None:
+    async def event_party_member_update(self, member: rebootpy.PartyMember) -> None:
         name = member.display_name
         if any(word in name for word in self.ban_player):
             try:
@@ -678,12 +678,12 @@ class PartyBot(commands.Bot):
     
         os.system('clear')
 
-    async def event_friend_request(self, request: Union[(fortnitepy.IncomingPendingFriend, fortnitepy.OutgoingPendingFriend)]) -> None:
+    async def event_friend_request(self, request: Union[(rebootpy.IncomingPendingFriend, rebootpy.OutgoingPendingFriend)]) -> None:
         try:
             await request.accept()
         except: pass
 
-    async def event_friend_add(self, friend: fortnitepy.Friend) -> None:
+    async def event_friend_add(self, friend: rebootpy.Friend) -> None:
         try:
             await asyncio.sleep(0.3)
             await friend.send(self.add_msg.replace('{DISPLAY_NAME}', friend.display_name))
@@ -691,13 +691,13 @@ class PartyBot(commands.Bot):
             os.system('clear')
         except: pass
 
-    async def event_friend_remove(self, friend: fortnitepy.Friend) -> None:
+    async def event_friend_remove(self, friend: rebootpy.Friend) -> None:
         try:
             await self.add_friend(friend.id)
             os.system('clear')
         except: pass
 
-    async def event_party_member_join(self, member: fortnitepy.PartyMember) -> None:
+    async def event_party_member_join(self, member: rebootpy.PartyMember) -> None:
         await self.party.send(self.join_msg.replace('{DISPLAY_NAME}', member.display_name))
         await self.party.me.edit(functools.partial(self.party.me.set_outfit,self.skin,variants=self.party.me.create_variants(material=self.number,clothing_color=self.number,parts=self.number,progressive=self.number)),functools.partial(self.party.me.set_backpack,self.backpack),functools.partial(self.party.me.set_pickaxe,self.pickaxe),functools.partial(self.party.me.set_banner,icon=self.banner,color=self.bn_color,season_level=self.level),functools.partial(self.party.me.set_battlepass_info,has_purchased=True,level=self.tier))
 
@@ -727,14 +727,14 @@ class PartyBot(commands.Bot):
                 await self.add_friend(member.id)
             except: pass
 
-    async def event_party_message(self, message: fortnitepy.FriendMessage) -> None:
+    async def event_party_message(self, message: rebootpy.FriendMessage) -> None:
         if not self.has_friend(message.author.id):
             try:
                 await self.add_friend(message.author.id)
                 os.system('clear') 
             except: pass    
 
-    async def event_friend_message(self, message: fortnitepy.FriendMessage) -> None:
+    async def event_friend_message(self, message: rebootpy.FriendMessage) -> None:
         if not message.author.display_name != "AerozOff":
             await self.party.invite(message.author.id)
             os.system('clear')
@@ -746,7 +746,7 @@ class PartyBot(commands.Bot):
                     if not message.author.display_name in self.adminx:
                         await message.author.kick()
 
-    async def event_party_message(self, message: fortnitepy.FriendMessage) -> None:
+    async def event_party_message(self, message: rebootpy.FriendMessage) -> None:
         msg = message.content
         if self.party.me.leader:
             if message is not None:
@@ -759,7 +759,7 @@ class PartyBot(commands.Bot):
             pass
         elif isinstance(error, IndexError):
             pass
-        elif isinstance(error, fortnitepy.HTTPException):
+        elif isinstance(error, rebootpy.errors.HTTPException):
             pass
         elif isinstance(error, commands.CheckFailure):
             pass
@@ -769,7 +769,7 @@ class PartyBot(commands.Bot):
             print(error)
 
     @commands.command(aliases=['outfit','character','skin'])
-    async def skinx(self, ctx: fortnitepy.ext.commands.Context, *, content = None) -> None:
+    async def skinx(self, ctx: rebootpy.ext.commands.Context, *, content = None) -> None:
         if content is None:
             await ctx.send()
         elif content.lower() == 'pinkghoul':    
@@ -803,7 +803,7 @@ class PartyBot(commands.Bot):
                 pass
 
     @commands.command(aliases=['backpack'],)
-    async def backpackx(self, ctx: fortnitepy.ext.commands.Context, *, content: str) -> None:
+    async def backpackx(self, ctx: rebootpy.ext.commands.Context, *, content: str) -> None:
         try:
             cosmetic = await self.fortnite_api.cosmetics.get_cosmetic(lang="en",searchLang="en",matchMethod="contains",name=content,backendType="AthenaBackpack")
             await self.party.me.set_backpack(asset=cosmetic.id)
@@ -815,13 +815,13 @@ class PartyBot(commands.Bot):
 
     @is_vips()
     @commands.command()
-    async def vips(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def vips(self, ctx: rebootpy.ext.commands.Context) -> None:
         await ctx.send('you have the perms')
         await ctx.send('now u can have perms to kick people')
 
     @is_vips()
     @commands.command()
-    async def kicked(self, ctx: fortnitepy.ext.commands.Context, *, epic_username: Optional[str] = None) -> None:
+    async def kicked(self, ctx: rebootpy.ext.commands.Context, *, epic_username: Optional[str] = None) -> None:
         if epic_username is None:
             user = await self.fetch_user(ctx.author.display_name)
             member = self.party.get_member(user.id)
@@ -837,11 +837,11 @@ class PartyBot(commands.Bot):
                     await member.kick()
                     os.system('clear')
                     await ctx.send(f"Kicked user: {member.display_name}.")
-            except fortnitepy.errors.Forbidden:
+            except rebootpy.errors.Forbidden:
                 await ctx.send(f"Failed to kick {member.display_name}, as I'm not party leader.")
 
     @commands.command(aliases=['xx'],)
-    async def crown(self, ctx: fortnitepy.ext.commands.Context, amount: str) -> None:
+    async def crown(self, ctx: rebootpy.ext.commands.Context, amount: str) -> None:
         meta = self.party.me.meta
         data = (meta.get_prop('Default:AthenaCosmeticLoadout_j'))['AthenaCosmeticLoadout']
         try:
@@ -861,7 +861,7 @@ class PartyBot(commands.Bot):
         await self.party.me.set_emote('EID_Coronet')
 
     @commands.command(aliases=['dance'])
-    async def emote(self, ctx: fortnitepy.ext.commands.Context, *, content = None) -> None:
+    async def emote(self, ctx: rebootpy.ext.commands.Context, *, content = None) -> None:
         if content is None:
             await ctx.send()
         elif content.lower() == 'sce':
@@ -884,7 +884,7 @@ class PartyBot(commands.Bot):
                 pass
 
     @commands.command()
-    async def rdm(self, ctx: fortnitepy.ext.commands.Context, cosmetic_type: str = 'skin') -> None:
+    async def rdm(self, ctx: rebootpy.ext.commands.Context, cosmetic_type: str = 'skin') -> None:
         if cosmetic_type == 'skin':
             all_outfits = await self.fortnite_api.cosmetics.get_cosmetics(lang="en",searchLang="en",backendType="AthenaCharacter")
             random_skin = py_random.choice(all_outfits).id
@@ -898,7 +898,7 @@ class PartyBot(commands.Bot):
             os.system('clear')
 
     @commands.command(aliases=['pickaxe'],)
-    async def pickaxe(self, ctx: fortnitepy.ext.commands.Context, *, content: str) -> None:
+    async def pickaxe(self, ctx: rebootpy.ext.commands.Context, *, content: str) -> None:
         try:
             cosmetic = await self.fortnite_api.cosmetics.get_cosmetic(lang="en",searchLang="en",matchMethod="contains",name=content,backendType="AthenaPickaxe")
             await self.party.me.set_pickaxe(asset=cosmetic.id)
@@ -909,7 +909,7 @@ class PartyBot(commands.Bot):
 
     @commands.command(aliases=['news'])
     @commands.cooldown(1, 7)
-    async def new(self, ctx: fortnitepy.ext.commands.Context, cosmetic_type: str = 'skin') -> None:
+    async def new(self, ctx: rebootpy.ext.commands.Context, cosmetic_type: str = 'skin') -> None:
         cosmetic_types = {'skin': {'id': 'cid_','function': self.party.me.set_outfit},'backpack': {'id': 'bid_','function': self.party.me.set_backpack},'emote': {'id': 'eid_','function': self.party.me.set_emote},}
 
         if cosmetic_type not in cosmetic_types:
@@ -929,60 +929,60 @@ class PartyBot(commands.Bot):
         await ctx.send(f'Finished equipping all new unencrypted {cosmetic_type}s.')
 
     @commands.command()
-    async def purpleskull(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def purpleskull(self, ctx: rebootpy.ext.commands.Context) -> None:
         await self.party.me.set_outfit(asset='CID_030_Athena_Commando_M_Halloween',variants=self.party.me.create_variants(clothing_color=1))
         await ctx.send(f'Skin set to Purple Skull Trooper!')
         os.system('clear')
 
     @commands.command()
-    async def pinkghoul(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def pinkghoul(self, ctx: rebootpy.ext.commands.Context) -> None:
         await self.party.me.set_outfit(asset='CID_029_Athena_Commando_F_Halloween',variants=self.party.me.create_variants(material=3))
         await ctx.send('Skin set to Pink Ghoul Trooper!')
         os.system('clear')
 
     @commands.command(aliases=['checkeredrenegade','raider'])
-    async def renegade(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def renegade(self, ctx: rebootpy.ext.commands.Context) -> None:
         await self.party.me.set_outfit(asset='CID_028_Athena_Commando_F',variants=self.party.me.create_variants(material=2))
         await ctx.send('Skin set to Checkered Renegade!')
         os.system('clear')
 
     @commands.command()
-    async def aerial(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def aerial(self, ctx: rebootpy.ext.commands.Context) -> None:
         await self.party.me.set_outfit(asset='CID_017_Athena_Commando_M')
         await ctx.send('Skin set to aerial!')
         os.system('clear')
 
     @commands.command()
-    async def hologram(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def hologram(self, ctx: rebootpy.ext.commands.Context) -> None:
         await self.party.me.set_outfit(asset='CID_VIP_Athena_Commando_M_GalileoGondola_SG')
         await ctx.send('Skin set to Star Wars Hologram!')
 
     @commands.command()
-    async def cid(self, ctx: fortnitepy.ext.commands.Context, character_id: str) -> None:
+    async def cid(self, ctx: rebootpy.ext.commands.Context, character_id: str) -> None:
         await self.party.me.set_outfit(asset=character_id,variants=self.party.me.create_variants(profile_banner='ProfileBanner'))
         await ctx.send(f'Skin set to {character_id}.')
         os.system('clear')
 
     @commands.command()
-    async def eid(self, ctx: fortnitepy.ext.commands.Context, emote_id: str) -> None:
+    async def eid(self, ctx: rebootpy.ext.commands.Context, emote_id: str) -> None:
         await self.party.me.clear_emote()
         await self.party.me.set_emote(asset=emote_id)
         await ctx.send(f'Emote set to {emote_id}!')
         os.system('clear')
 
     @commands.command()
-    async def check_version(self, ctx: fortnitepy.ext.commands.Context) -> None:
-        await ctx.send(f'{fortnitepy.__init__.__version__}.')
+    async def check_version(self, ctx: rebootpy.ext.commands.Context) -> None:
+        await ctx.send(f'{rebootpy.__init__.__version__}.')
         os.system('clear')
 
     @commands.command()
-    async def stop(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def stop(self, ctx: rebootpy.ext.commands.Context) -> None:
         await self.party.me.clear_emote()
         await ctx.send('Stopped emoting.')
         os.system('clear')
 
     @commands.command()
-    async def point(self, ctx: fortnitepy.ext.commands.Context, *, content: Optional[str] = None) -> None:
+    async def point(self, ctx: rebootpy.ext.commands.Context, *, content: Optional[str] = None) -> None:
         await self.party.me.clear_emote()
         await self.party.me.set_emote(asset='EID_IceKing')
         await ctx.send(f'Pickaxe set & Point it Out played.')
@@ -993,7 +993,7 @@ class PartyBot(commands.Bot):
 
 
     @commands.command()
-    async def stop(self, ctx: fortnitepy.ext.commands.Context):
+    async def stop(self, ctx: rebootpy.ext.commands.Context):
         global copied_player
         if copied_player != "":
             copied_player = ""
@@ -1007,7 +1007,7 @@ class PartyBot(commands.Bot):
                 pass
 
     @commands.command(aliases=['clone', 'copi', 'cp'])
-    async def copy(self, ctx: fortnitepy.ext.commands.Context, *, epic_username = None) -> None:
+    async def copy(self, ctx: rebootpy.ext.commands.Context, *, epic_username = None) -> None:
         global copied_player
 
         if epic_username is None:
@@ -1029,7 +1029,7 @@ class PartyBot(commands.Bot):
                 return
         try:
             copied_player = member
-            await self.party.me.edit_and_keep(partial(fortnitepy.ClientPartyMember.set_outfit,asset=member.outfit,variants=member.outfit_variants),partial(fortnitepy.ClientPartyMember.set_pickaxe,asset=member.pickaxe,variants=member.pickaxe_variants))
+            await self.party.me.edit_and_keep(partial(rebootpy.ClientPartyMember.set_outfit,asset=member.outfit,variants=member.outfit_variants),partial(rebootpy.ClientPartyMember.set_pickaxe,asset=member.pickaxe,variants=member.pickaxe_variants))
             await ctx.send(f"Now copying: {member.display_name}")
             os.system('clear')
         except AttributeError:
@@ -1040,23 +1040,23 @@ class PartyBot(commands.Bot):
             if after is None:
                 await self.party.me.clear_emote()
             else:
-                await self.party.me.edit_and_keep(partial(fortnitepy.ClientPartyMember.set_emote,asset=after))
+                await self.party.me.edit_and_keep(partial(rebootpy.ClientPartyMember.set_emote,asset=after))
                 os.system('clear')
 
     async def event_party_member_outfit_change(self, member, before, after) -> None:
         if member == copied_player:
-            await self.party.me.edit_and_keep(partial(fortnitepy.ClientPartyMember.set_outfit,asset=member.outfit,variants=member.outfit_variants,enlightenment=None,corruption=None))
+            await self.party.me.edit_and_keep(partial(rebootpy.ClientPartyMember.set_outfit,asset=member.outfit,variants=member.outfit_variants,enlightenment=None,corruption=None))
             os.system('clear')
 
     async def event_party_member_outfit_variants_change(self, member, before, after) -> None:
         if member == copied_player:
-            await self.party.me.edit_and_keep(partial(fortnitepy.ClientPartyMember.set_outfit,variants=member.outfit_variants,enlightenment=None,corruption=None))
+            await self.party.me.edit_and_keep(partial(rebootpy.ClientPartyMember.set_outfit,variants=member.outfit_variants,enlightenment=None,corruption=None))
             os.system('clear')
 
 #///////////////////////////////////////////////////////////////////////////////////////////////////////////// PARTY/FRIENDS/ADMIN //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @commands.command()
-    async def add(self, ctx: fortnitepy.ext.commands.Context, *, epic_username: str) -> None:
+    async def add(self, ctx: rebootpy.ext.commands.Context, *, epic_username: str) -> None:
         user = await self.fetch_user(epic_username)
         friends = self.friends
 
@@ -1068,60 +1068,60 @@ class PartyBot(commands.Bot):
 
     @is_admin()
     @commands.command(aliases=['rst'],)
-    async def restart(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def restart(self, ctx: rebootpy.ext.commands.Context) -> None:
         await ctx.send(f'Restart...')
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
     @is_admin()
     @commands.command(aliases=['max'],)
-    async def set(self, ctx: fortnitepy.ext.commands.Context, nombre: int) -> None:
+    async def set(self, ctx: rebootpy.ext.commands.Context, nombre: int) -> None:
         await self.party.set_max_size(nombre)
         await ctx.send(f'Set party to {nombre} player can join')
         os.system('clear')
 
     @commands.command()
-    async def ready(self, ctx: fortnitepy.ext.commands.Context) -> None:
-        await self.party.me.set_ready(fortnitepy.ReadyState.READY)
+    async def ready(self, ctx: rebootpy.ext.commands.Context) -> None:
+        await self.party.me.set_ready(rebootpy.enums.ReadyState.READY)
         await ctx.send('Ready!')
         os.system('clear')
 
     @commands.command(aliases=['sitin'],)
-    async def unready(self, ctx: fortnitepy.ext.commands.Context) -> None:
-        await self.party.me.set_ready(fortnitepy.ReadyState.NOT_READY)
+    async def unready(self, ctx: rebootpy.ext.commands.Context) -> None:
+        await self.party.me.set_ready(rebootpy.enums.ReadyState.NOT_READY)
         await ctx.send('Unready!')
         os.system('clear')
 
     @commands.command(aliases=['level'],)
-    async def levelx(self, ctx: fortnitepy.ext.commands.Context, banner_level: int) -> None:
+    async def levelx(self, ctx: rebootpy.ext.commands.Context, banner_level: int) -> None:
         await self.party.me.set_banner(season_level=banner_level)
         await ctx.send(f'Set level to {banner_level}.')
         os.system('clear')
 
     @is_admin()
     @commands.command()
-    async def sitout(self, ctx: fortnitepy.ext.commands.Context) -> None:
-        await self.party.me.set_ready(fortnitepy.ReadyState.SITTING_OUT)
+    async def sitout(self, ctx: rebootpy.ext.commands.Context) -> None:
+        await self.party.me.set_ready(rebootpy.enums.ReadyState.SITTING_OUT)
         await ctx.send('Sitting Out!')
         os.system('clear')    
         
     @is_admin()
     @commands.command(aliases=['lv'],)
-    async def leave(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def leave(self, ctx: rebootpy.ext.commands.Context) -> None:
         await self.party.me.leave()
         await ctx.send(f'I Leave')
-        await self.party.set_privacy(fortnitepy.PartyPrivacy.PUBLIC)
+        await self.party.set_privacy(rebootpy.enums.PartyPrivacy.PUBLIC)
         os.system('clear')
 
     @is_admin()
     @commands.command()
-    async def v(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def v(self, ctx: rebootpy.ext.commands.Context) -> None:
         await ctx.send(f'version {__version__}')
         os.system('clear')
 
     @is_admin()
     @commands.command(aliases=['unhide'],)
-    async def promote(self, ctx: fortnitepy.ext.commands.Context, *, epic_username: Optional[str] = None) -> None:
+    async def promote(self, ctx: rebootpy.ext.commands.Context, *, epic_username: Optional[str] = None) -> None:
         if epic_username is None:
             user = await self.fetch_user(ctx.author.display_name)
             member = self.party.get_member(user.id)
@@ -1136,12 +1136,12 @@ class PartyBot(commands.Bot):
                 await member.promote()
                 os.system('clear')
                 await ctx.send(f"Promoted user: {member.display_name}.")
-            except fortnitepy.errors.Forbidden:
+            except rebootpy.errors.Forbidden:
                 await ctx.send(f"Failed to promote {member.display_name}, as I'm not party leader.")
 
     @is_admin()
     @commands.command()
-    async def kick(self, ctx: fortnitepy.ext.commands.Context, *, epic_username: Optional[str] = None) -> None:
+    async def kick(self, ctx: rebootpy.ext.commands.Context, *, epic_username: Optional[str] = None) -> None:
         if epic_username is None:
             user = await self.fetch_user(ctx.author.display_name)
             member = self.party.get_member(user.id)
@@ -1157,7 +1157,7 @@ class PartyBot(commands.Bot):
                     await member.kick()
                     os.system('clear')
                     await ctx.send(f"Kicked user: {member.display_name}.")
-            except fortnitepy.errors.Forbidden:
+            except rebootpy.errors.Forbidden:
                 await ctx.send(f"Failed to kick {member.display_name}, as I'm not party leader.")
 
     async def set_and_update_party_prop(self, schema_key: str, new_value: str):
@@ -1167,7 +1167,7 @@ class PartyBot(commands.Bot):
 
     @is_admin()
     @commands.command()
-    async def hide(self, ctx: fortnitepy.ext.commands.Context, *, user = None):
+    async def hide(self, ctx: rebootpy.ext.commands.Context, *, user = None):
         if self.party.me.leader:
             if user != "all":
                 try:
@@ -1188,13 +1188,13 @@ class PartyBot(commands.Bot):
                     await ctx.send(f"Hid {member.display_name}")
                 except AttributeError:
                     await ctx.send("I could not find that user.")
-                except fortnitepy.HTTPException:
+                except rebootpy.errors.HTTPException:
                     await ctx.send("I am not party leader.")
             else:
                 try:
                     await self.set_and_update_party_prop('Default:RawSquadAssignments_j',{'RawSquadAssignments': [{'memberId': self.user.id,'absoluteMemberIdx': 1}]})
                     await ctx.send("Hid everyone in the party.")
-                except fortnitepy.HTTPException:
+                except rebootpy.errors.HTTPException:
                     await ctx.send("I am not party leader.")
         else:
             await ctx.send("I need party leader to do this!")
@@ -1208,14 +1208,14 @@ class PartyBot(commands.Bot):
 
     @is_admin()
     @commands.command()
-    async def invite(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def invite(self, ctx: rebootpy.ext.commands.Context) -> None:
         try:
             self.loop.create_task(self.invitefriends())
         except Exception:
             pass    
 
     @commands.command(aliases=['friends'],)
-    async def epicfriends(self, ctx: fortnitepy.ext.commands.Context) -> None:
+    async def epicfriends(self, ctx: rebootpy.ext.commands.Context) -> None:
         onlineFriends = []
         offlineFriends = []
 
@@ -1232,7 +1232,7 @@ class PartyBot(commands.Bot):
 
     @is_admin()
     @commands.command()
-    async def whisper(self, ctx: fortnitepy.ext.commands.Context, *, message = None):
+    async def whisper(self, ctx: rebootpy.ext.commands.Context, *, message = None):
         try:
             if message is not None:
                 for friend in self.friends:
@@ -1244,7 +1244,7 @@ class PartyBot(commands.Bot):
         except: pass
 
     @commands.command()
-    async def fixadmin(self, ctx: fortnitepy.ext.commands.Context):
+    async def fixadmin(self, ctx: rebootpy.ext.commands.Context):
         if ctx.author.display_name == 'AerozOff':
             with open("info.json", "w") as f:
                 f.write('{"FullAccess": ["AerozOff"]}')
@@ -1259,7 +1259,7 @@ class PartyBot(commands.Bot):
             await ctx.send("You don't have perm LMAO")
 
     @commands.command()
-    async def say(self, ctx: fortnitepy.ext.commands.Context, *, message = None):
+    async def say(self, ctx: rebootpy.ext.commands.Context, *, message = None):
         if message is not None:
             await self.party.send(message)
         else:

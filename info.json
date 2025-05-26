@@ -1,0 +1,6 @@
+{
+    "email": "example@example.com",
+    "password": "password",
+    "FullAccess": ["ExampleUser"],
+    "AdminUsers": ["ExampleAdmin"]
+}

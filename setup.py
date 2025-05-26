@@ -20,6 +20,7 @@ setuptools.setup(
         'sanic==21.6.2',
         'colorama',
         'aiohttp',
+        'git+https://github.com/xMistt/rebootpy.git',
     ],
     include_package_data=True
 )
