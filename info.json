@@ -1,6 +1,7 @@
 {
-    "email": "example@example.com",
-    "password": "password",
+    "device_id": "your_device_id_here",
+    "account_id": "your_account_id_here",
+    "secret": "your_secret_here",
     "FullAccess": ["ExampleUser"],
     "AdminUsers": ["ExampleAdmin"]
 }
